@@ -179,98 +179,102 @@ export default async function AdminDashboardPage({
   if (sp.to) exportParams.set("to", sp.to);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 font-sans text-zinc-950">
       <div>
-        <h1 className="text-2xl font-semibold text-white">Member insights</h1>
-        <p className="mt-1 text-sm text-zinc-400">
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-950">
+          Member insights
+        </h1>
+        <p className="mt-1 text-sm text-zinc-900">
           Transcripts, summaries, and aggregate themes for filtered sessions.
         </p>
       </div>
 
-      <Suspense fallback={<div className="text-sm text-zinc-500">Loading filters…</div>}>
+      <Suspense fallback={<div className="text-sm text-zinc-800">Loading filters…</div>}>
         <AdminFilters events={events} />
       </Suspense>
 
       <div className="flex flex-wrap gap-2">
         <a
-          className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-200 hover:bg-zinc-800"
+          className="rounded-lg border border-zinc-400 bg-white px-3 py-1.5 text-xs font-medium text-zinc-950 shadow-sm hover:bg-zinc-50"
           href={`/api/admin/export?format=csv&${exportParams.toString()}`}
         >
           Export CSV
         </a>
         <a
-          className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-200 hover:bg-zinc-800"
+          className="rounded-lg border border-zinc-400 bg-white px-3 py-1.5 text-xs font-medium text-zinc-950 shadow-sm hover:bg-zinc-50"
           href={`/api/admin/export?format=json&${exportParams.toString()}`}
         >
           Export JSON
         </a>
       </div>
 
-      <section className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-        <h2 className="text-sm font-semibold text-white">Aggregate (filtered)</h2>
-        <p className="mt-1 text-xs text-zinc-500">
+      <section className="rounded-xl border border-zinc-300 bg-white p-4 shadow-sm">
+        <h2 className="text-sm font-semibold text-zinc-950">Aggregate (filtered)</h2>
+        <p className="mt-1 text-xs font-medium text-zinc-900">
           Sessions in current filter with analysis: {aggregate.sessionCount}
         </p>
         <div className="mt-4 grid gap-6 lg:grid-cols-2">
           <div>
-            <h3 className="text-xs font-medium uppercase tracking-wide text-zinc-500">Themes</h3>
-            <ul className="mt-2 space-y-1 text-sm text-zinc-300">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-950">
+              Themes
+            </h3>
+            <ul className="mt-2 space-y-1 text-sm text-zinc-900">
               {aggregate.themeCounts.length === 0 ? (
-                <li className="text-zinc-600">No themes yet.</li>
+                <li className="text-zinc-800">No themes yet.</li>
               ) : (
                 aggregate.themeCounts.map((t) => (
                   <li key={t.label}>
                     {t.label}{" "}
-                    <span className="text-zinc-500">({t.count})</span>
+                    <span className="text-zinc-800">({t.count})</span>
                   </li>
                 ))
               )}
             </ul>
           </div>
           <div>
-            <h3 className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-950">
               Tools mentioned
             </h3>
-            <ul className="mt-2 space-y-1 text-sm text-zinc-300">
+            <ul className="mt-2 space-y-1 text-sm text-zinc-900">
               {aggregate.toolsMentioned.length === 0 ? (
-                <li className="text-zinc-600">None extracted.</li>
+                <li className="text-zinc-800">None extracted.</li>
               ) : (
                 aggregate.toolsMentioned.map((t) => (
                   <li key={t.label}>
                     {t.label}{" "}
-                    <span className="text-zinc-500">({t.count})</span>
+                    <span className="text-zinc-800">({t.count})</span>
                   </li>
                 ))
               )}
             </ul>
           </div>
           <div>
-            <h3 className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-950">
               Tools requested / excited
             </h3>
-            <ul className="mt-2 space-y-1 text-sm text-zinc-300">
+            <ul className="mt-2 space-y-1 text-sm text-zinc-900">
               {aggregate.toolsRequested.length === 0 ? (
-                <li className="text-zinc-600">None extracted.</li>
+                <li className="text-zinc-800">None extracted.</li>
               ) : (
                 aggregate.toolsRequested.map((t) => (
                   <li key={t.label}>
                     {t.label}{" "}
-                    <span className="text-zinc-500">({t.count})</span>
+                    <span className="text-zinc-800">({t.count})</span>
                   </li>
                 ))
               )}
             </ul>
           </div>
           <div>
-            <h3 className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-950">
               Sample quotes
             </h3>
-            <ul className="mt-2 space-y-2 text-sm text-zinc-300">
+            <ul className="mt-2 space-y-2 text-sm text-zinc-900">
               {aggregate.sampleQuotes.length === 0 ? (
-                <li className="text-zinc-600">No quotes yet.</li>
+                <li className="text-zinc-800">No quotes yet.</li>
               ) : (
                 aggregate.sampleQuotes.map((q, i) => (
-                  <li key={i} className="border-l-2 border-indigo-500/50 pl-3 text-zinc-400">
+                  <li key={i} className="border-l-2 border-zinc-500 pl-3 text-zinc-950">
                     “{q}”
                   </li>
                 ))
@@ -281,10 +285,10 @@ export default async function AdminDashboardPage({
       </section>
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold text-white">Sessions</h2>
-        <div className="overflow-x-auto rounded-xl border border-zinc-800">
+        <h2 className="mb-3 text-sm font-semibold text-zinc-950">Sessions</h2>
+        <div className="overflow-x-auto rounded-xl border border-zinc-300 bg-white shadow-sm">
           <table className="min-w-full text-left text-sm">
-            <thead className="bg-zinc-900/80 text-xs uppercase text-zinc-500">
+            <thead className="bg-zinc-200 text-xs font-semibold uppercase tracking-wide text-zinc-950">
               <tr>
                 <th className="px-3 py-2">Started</th>
                 <th className="px-3 py-2">Status</th>
@@ -293,29 +297,29 @@ export default async function AdminDashboardPage({
                 <th className="px-3 py-2" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-800">
+            <tbody className="divide-y divide-zinc-200">
               {sessions.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-3 py-6 text-center text-zinc-500">
+                  <td colSpan={5} className="px-3 py-6 text-center text-zinc-800">
                     No sessions match filters.
                   </td>
                 </tr>
               ) : (
                 sessions.map((s) => (
-                  <tr key={s.id} className="hover:bg-zinc-900/50">
-                    <td className="whitespace-nowrap px-3 py-2 text-zinc-400">
+                  <tr key={s.id} className="hover:bg-zinc-50">
+                    <td className="whitespace-nowrap px-3 py-2 text-zinc-900">
                       {new Date(s.started_at).toLocaleString()}
                     </td>
-                    <td className="px-3 py-2 text-zinc-300">{s.completion_status}</td>
-                    <td className="px-3 py-2 text-zinc-400">
+                    <td className="px-3 py-2 text-zinc-950">{s.completion_status}</td>
+                    <td className="px-3 py-2 text-zinc-900">
                       {s.events?.name ?? "—"}
                     </td>
-                    <td className="max-w-md truncate px-3 py-2 text-zinc-400">
+                    <td className="max-w-md truncate px-3 py-2 text-zinc-900">
                       {s.interview_analysis?.summary ?? "—"}
                     </td>
                     <td className="px-3 py-2 text-right">
                       <Link
-                        className="text-indigo-400 hover:text-indigo-300"
+                        className="font-medium text-indigo-600 hover:text-indigo-800"
                         href={`/admin/sessions/${s.id}`}
                       >
                         View

@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import { InterviewClient } from "./InterviewClient";
 
+export const dynamic = "force-dynamic";
+
 export default function InterviewPage() {
   return (
     <Suspense

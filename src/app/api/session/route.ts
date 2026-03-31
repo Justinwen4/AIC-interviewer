@@ -1,13 +1,30 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
+  clearInterviewSessionCookie,
   getInterviewSessionIdFromCookie,
   setInterviewSessionCookie,
 } from "@/lib/auth/interview-session";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
+function serializeError(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  if (typeof e === "object" && e !== null && "message" in e) {
+    const m = (e as { message?: unknown }).message;
+    if (typeof m === "string") return m;
+  }
+  if (typeof e === "string") return e;
+  try {
+    return JSON.stringify(e);
+  } catch {
+    return "Unknown error";
+  }
+}
+
 const bodySchema = z.object({
   eventSlug: z.string().min(1).optional(),
+  /** When true, clear any existing session cookie before creating a new session. */
+  forceNew: z.boolean().optional(),
 });
 
 const OPENING =
@@ -16,7 +33,25 @@ const OPENING =
 export async function POST(request: Request) {
   try {
     const json = await request.json().catch(() => ({}));
-    const { eventSlug } = bodySchema.parse(json);
+    const { eventSlug, forceNew } = bodySchema.parse(json);
+    // #region agent log
+    fetch("http://127.0.0.1:7483/ingest/46ed386d-f4de-40a7-81f7-25238153133b", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "a1ad68" },
+      body: JSON.stringify({
+        sessionId: "a1ad68",
+        location: "session/route.ts:POST",
+        message: "POST /api/session",
+        data: { forceNew: !!forceNew, hasEventSlug: !!eventSlug },
+        timestamp: Date.now(),
+        hypothesisId: "H3",
+        runId: "pre-fix",
+      }),
+    }).catch(() => {});
+    // #endregion
+    if (forceNew) {
+      await clearInterviewSessionCookie();
+    }
     const supabase = getSupabaseAdmin();
 
     let eventId: string | null = null;
@@ -70,8 +105,22 @@ export async function POST(request: Request) {
       messages: messages ?? [],
     });
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 400 });
+    console.error("[POST /api/session]", e);
+    let message = serializeError(e);
+    const lower = message.toLowerCase();
+    if (
+      lower.includes("invalid api key") ||
+      lower.includes("jwt") ||
+      lower.includes("invalid value for jwt")
+    ) {
+      message +=
+        " — Use Supabase Project Settings → API → service_role secret in SUPABASE_SERVICE_ROLE_KEY (not the anon/publishable key). Restart the dev server after updating .env.local.";
+    }
+    const status =
+      typeof message === "string" && message.includes("environment variables")
+        ? 503
+        : 400;
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
@@ -119,7 +168,8 @@ export async function GET() {
       messages: messages ?? [],
     });
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Unknown error";
+    console.error("[GET /api/session]", e);
+    const message = serializeError(e);
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }

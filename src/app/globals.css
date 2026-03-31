@@ -12,15 +12,13 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* Intentionally no prefers-color-scheme override for :root/body: it forced a black page
+   background and light text inheritance that made admin (and other non–dark: pages) look
+   “stuck” in dark mode. Pages that need dark UI use Tailwind `dark:` utilities instead. */
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /* Geist from next/font on <html>; explicit stack so we never fall back to browser serif */
+  font-family: var(--font-geist-sans, ui-sans-serif), system-ui, sans-serif;
 }

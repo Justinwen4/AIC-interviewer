@@ -15,3 +15,7 @@ export async function setInterviewSessionCookie(sessionId: string): Promise<void
     maxAge: 60 * 60 * 24 * 7, // 7 days
   });
 }
+
+export async function clearInterviewSessionCookie(): Promise<void> {
+  (await cookies()).delete(COOKIE);
+}

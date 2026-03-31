@@ -1,9 +1,30 @@
 import OpenAI from "openai";
+import { NextResponse } from "next/server";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import { getInterviewSessionIdFromCookie } from "@/lib/auth/interview-session";
 import { getServerEnv } from "@/lib/env";
 import { INTERVIEWER_SYSTEM_PROMPT } from "@/lib/llm/interviewer-prompt";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+
+function openAIChatErrorResponse(err: unknown): NextResponse {
+  const msg = err instanceof Error ? err.message : String(err);
+  const lower = msg.toLowerCase();
+  const isAuth =
+    lower.includes("invalid api key") ||
+    lower.includes("incorrect api key") ||
+    lower.includes("invalid authorization") ||
+    (err instanceof OpenAI.APIError && err.status === 401);
+  if (isAuth) {
+    return NextResponse.json(
+      {
+        error:
+          "OpenAI rejected this API key. Set OPENAI_API_KEY in .env.local to a current secret key from https://platform.openai.com/api-keys (no quotes; trim spaces). Restart npm run dev after saving. If the key was pasted in chat or committed, rotate it and use the new key.",
+      },
+      { status: 401 },
+    );
+  }
+  return NextResponse.json({ error: msg }, { status: 502 });
+}
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -68,12 +89,17 @@ export async function POST(request: Request) {
   const env = getServerEnv();
   const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
 
-  const stream = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    temperature: 0.7,
-    stream: true,
-    messages,
-  });
+  let stream: AsyncIterable<OpenAI.Chat.Completions.ChatCompletionChunk>;
+  try {
+    stream = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      temperature: 0.7,
+      stream: true,
+      messages,
+    });
+  } catch (err) {
+    return openAIChatErrorResponse(err);
+  }
 
   const encoder = new TextEncoder();
   let fullAssistant = "";

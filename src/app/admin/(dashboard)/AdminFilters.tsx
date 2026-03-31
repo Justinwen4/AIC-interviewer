@@ -29,11 +29,11 @@ export function AdminFilters({ events }: { events: EventRow[] }) {
   }, [router, searchParams, q]);
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 sm:flex-row sm:flex-wrap sm:items-end">
-      <label className="flex flex-col gap-1 text-xs text-zinc-400">
+    <div className="flex flex-col gap-3 rounded-xl border border-zinc-300 bg-white p-4 font-sans shadow-sm sm:flex-row sm:flex-wrap sm:items-end">
+      <label className="flex flex-col gap-1 text-xs font-semibold text-zinc-950">
         Event
         <select
-          className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-sm text-white"
+          className="rounded-lg border border-zinc-400 bg-white px-2 py-1.5 font-sans text-sm text-zinc-950 shadow-sm"
           defaultValue={searchParams.get("event") ?? "all"}
           onChange={(e) => {
             const params = new URLSearchParams(searchParams.toString());
@@ -49,11 +49,11 @@ export function AdminFilters({ events }: { events: EventRow[] }) {
           ))}
         </select>
       </label>
-      <label className="flex flex-col gap-1 text-xs text-zinc-400">
+      <label className="flex flex-col gap-1 text-xs font-semibold text-zinc-950">
         From
         <input
           type="date"
-          className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-sm text-white"
+          className="rounded-lg border border-zinc-400 bg-white px-2 py-1.5 font-sans text-sm text-zinc-950 shadow-sm"
           defaultValue={searchParams.get("from") ?? ""}
           onChange={(e) => {
             const params = new URLSearchParams(searchParams.toString());
@@ -63,11 +63,11 @@ export function AdminFilters({ events }: { events: EventRow[] }) {
           }}
         />
       </label>
-      <label className="flex flex-col gap-1 text-xs text-zinc-400">
+      <label className="flex flex-col gap-1 text-xs font-semibold text-zinc-950">
         To
         <input
           type="date"
-          className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-sm text-white"
+          className="rounded-lg border border-zinc-400 bg-white px-2 py-1.5 font-sans text-sm text-zinc-950 shadow-sm"
           defaultValue={searchParams.get("to") ?? ""}
           onChange={(e) => {
             const params = new URLSearchParams(searchParams.toString());
@@ -77,11 +77,11 @@ export function AdminFilters({ events }: { events: EventRow[] }) {
           }}
         />
       </label>
-      <label className="flex min-w-[12rem] flex-1 flex-col gap-1 text-xs text-zinc-400">
+      <label className="flex min-w-[12rem] flex-1 flex-col gap-1 text-xs font-semibold text-zinc-950">
         Search summaries
         <div className="flex gap-2">
           <input
-            className="min-w-0 flex-1 rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-sm text-white"
+            className="min-w-0 flex-1 rounded-lg border border-zinc-400 bg-white px-2 py-1.5 font-sans text-sm text-zinc-950 shadow-sm placeholder:text-zinc-600"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Keyword…"
@@ -90,7 +90,7 @@ export function AdminFilters({ events }: { events: EventRow[] }) {
             type="button"
             onClick={() => apply()}
             disabled={pending}
-            className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
+            className="rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-zinc-800 disabled:opacity-50"
           >
             Apply
           </button>

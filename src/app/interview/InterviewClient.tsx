@@ -1,7 +1,8 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { fetchJson } from "@/lib/client/json-fetch";
 
 type ChatMessage = {
   id: string;
@@ -13,8 +14,10 @@ type ChatMessage = {
 const CONSENT_KEY = "aic_interview_consent_v1";
 
 export function InterviewClient() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const eventSlug = searchParams.get("event") ?? undefined;
+  const forceNewSession = searchParams.get("new") === "1";
 
   const [consent, setConsent] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -24,43 +27,172 @@ export function InterviewClient() {
   const [ended, setEnded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const bootPromiseRef = useRef<Promise<void> | null>(null);
 
   const scrollToBottom = () => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  type SessionPayload = {
+    sessionId: string | null;
+    messages: ChatMessage[];
+    completionStatus?: string;
+    error?: string;
+  };
+
   const boot = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const existing = await fetch("/api/session").then((r) => r.json());
-      if (existing.error) throw new Error(existing.error);
-      if (existing.sessionId && existing.messages?.length) {
-        setMessages(existing.messages);
-        if (existing.completionStatus !== "in_progress") {
-          setEnded(true);
-        }
-        setLoading(false);
-        return;
-      }
-      const created = await fetch("/api/session", {
+    // #region agent log
+    fetch("http://127.0.0.1:7483/ingest/46ed386d-f4de-40a7-81f7-25238153133b", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "a1ad68" },
+      body: JSON.stringify({
+        sessionId: "a1ad68",
+        location: "InterviewClient.tsx:boot:entry",
+        message: "boot invoked",
+        data: {
+          forceNewSession,
+          hadPendingPromise: !!bootPromiseRef.current,
+          urlSearch:
+            typeof window !== "undefined" ? window.location.search : "no-window",
+        },
+        timestamp: Date.now(),
+        hypothesisId: "H1",
+        runId: "pre-fix",
+      }),
+    }).catch(() => {});
+    // #endregion
+    if (bootPromiseRef.current) {
+      await bootPromiseRef.current;
+      // #region agent log
+      fetch("http://127.0.0.1:7483/ingest/46ed386d-f4de-40a7-81f7-25238153133b", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eventSlug }),
-      }).then((r) => r.json());
-      if (created.error) throw new Error(created.error);
-      setMessages(created.messages ?? []);
-      setLoading(false);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not start session");
-      setLoading(false);
+        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "a1ad68" },
+        body: JSON.stringify({
+          sessionId: "a1ad68",
+          location: "InterviewClient.tsx:boot:after-await-pending",
+          message: "early return: awaited existing boot promise",
+          data: { forceNewSession },
+          timestamp: Date.now(),
+          hypothesisId: "H1",
+          runId: "pre-fix",
+        }),
+      }).catch(() => {});
+      // #endregion
+      return;
     }
-  }, [eventSlug]);
+    const run = (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        if (forceNewSession) {
+          // #region agent log
+          fetch("http://127.0.0.1:7483/ingest/46ed386d-f4de-40a7-81f7-25238153133b", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "a1ad68" },
+            body: JSON.stringify({
+              sessionId: "a1ad68",
+              location: "InterviewClient.tsx:boot:forceNew-branch",
+              message: "taking POST forceNew path",
+              data: {},
+              timestamp: Date.now(),
+              hypothesisId: "H4",
+              runId: "pre-fix",
+            }),
+          }).catch(() => {});
+          // #endregion
+          const created = await fetchJson<SessionPayload>("/api/session", {
+            method: "POST",
+            body: JSON.stringify({ eventSlug, forceNew: true }),
+          });
+          if (!created.ok) {
+            const hint =
+              created.status === 503 ||
+              /environment variables|supabase|relation|does not exist/i.test(created.error)
+                ? " Set SUPABASE_SERVICE_ROLE_KEY in .env.local, run the SQL in supabase/migrations in the Supabase SQL editor, then restart the dev server."
+                : "";
+            throw new Error(created.error + hint);
+          }
+          const cr = created.data;
+          if (!cr.messages?.length) {
+            throw new Error("Session started but no messages returned. Check database and API logs.");
+          }
+          setMessages(cr.messages);
+          setEnded(false);
+          const params = new URLSearchParams(searchParams.toString());
+          params.delete("new");
+          const qs = params.toString();
+          router.replace(`/interview${qs ? `?${qs}` : ""}`);
+          return;
+        }
+
+        // #region agent log
+        fetch("http://127.0.0.1:7483/ingest/46ed386d-f4de-40a7-81f7-25238153133b", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "a1ad68" },
+          body: JSON.stringify({
+            sessionId: "a1ad68",
+            location: "InterviewClient.tsx:boot:get-branch",
+            message: "taking GET existing session path",
+            data: { forceNewSession },
+            timestamp: Date.now(),
+            hypothesisId: "H2",
+            runId: "pre-fix",
+          }),
+        }).catch(() => {});
+        // #endregion
+        const existing = await fetchJson<SessionPayload>("/api/session");
+        if (!existing.ok) {
+          throw new Error(existing.error);
+        }
+        const ex = existing.data;
+        if (ex.sessionId && ex.messages?.length) {
+          setMessages(ex.messages);
+          if (ex.completionStatus !== "in_progress") {
+            setEnded(true);
+          }
+          return;
+        }
+        const created = await fetchJson<SessionPayload>("/api/session", {
+          method: "POST",
+          body: JSON.stringify({ eventSlug }),
+        });
+        if (!created.ok) {
+          const hint =
+            created.status === 503 || /environment variables|supabase|relation|does not exist/i.test(
+              created.error,
+            )
+              ? " Set SUPABASE_SERVICE_ROLE_KEY in .env.local, run the SQL in supabase/migrations in the Supabase SQL editor, then restart the dev server."
+              : "";
+          throw new Error(created.error + hint);
+        }
+        const cr = created.data;
+        if (!cr.messages?.length) {
+          throw new Error("Session started but no messages returned. Check database and API logs.");
+        }
+        setMessages(cr.messages);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Could not start session");
+      } finally {
+        setLoading(false);
+      }
+    })();
+    bootPromiseRef.current = run;
+    try {
+      await run;
+    } finally {
+      bootPromiseRef.current = null;
+    }
+  }, [eventSlug, forceNewSession, router, searchParams]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const ok = sessionStorage.getItem(CONSENT_KEY) === "1";
-    if (ok) {
+    let consentFlag = false;
+    try {
+      consentFlag = sessionStorage.getItem(CONSENT_KEY) === "1";
+    } catch {
+      consentFlag = false;
+    }
+    if (consentFlag) {
       setConsent(true);
       void boot();
     } else {
@@ -73,7 +205,11 @@ export function InterviewClient() {
   }, [messages, streaming]);
 
   const acceptConsent = () => {
-    sessionStorage.setItem(CONSENT_KEY, "1");
+    try {
+      sessionStorage.setItem(CONSENT_KEY, "1");
+    } catch {
+      /* private mode / quota */
+    }
     setConsent(true);
     void boot();
   };
@@ -100,6 +236,7 @@ export function InterviewClient() {
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content }),
       });
@@ -165,6 +302,7 @@ export function InterviewClient() {
     try {
       await fetch("/api/session/complete", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       });

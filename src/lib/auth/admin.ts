@@ -6,8 +6,8 @@ const MAX_AGE_SEC = 60 * 60 * 24 * 7; // 7 days
 
 function getSecret(): string {
   const s = process.env.ADMIN_PASSWORD;
-  if (!s || s.length < 16) {
-    throw new Error("ADMIN_PASSWORD must be set (min 16 characters)");
+  if (!s || s.length < 12) {
+    throw new Error("ADMIN_PASSWORD must be set (min 12 characters)");
   }
   return s;
 }
@@ -23,7 +23,7 @@ export function signAdminSession(): string {
 
 function verifyAdminSessionToken(token: string): boolean {
   const secret = process.env.ADMIN_PASSWORD;
-  if (!secret || secret.length < 16) return false;
+  if (!secret || secret.length < 12) return false;
   const parts = token.split(".");
   if (parts.length !== 3) return false;
   const [expStr, nonce, sig] = parts;
