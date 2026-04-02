@@ -26,12 +26,20 @@ const serverSchema = z.object({
 
 export type ServerEnv = z.infer<typeof serverSchema>;
 
+function formatEnvParseError(err: z.ZodError): string {
+  const flat = err.flatten();
+  const parts: string[] = [];
+  for (const [key, msgs] of Object.entries(flat.fieldErrors)) {
+    if (msgs?.length) parts.push(`${key}: ${msgs.join(", ")}`);
+  }
+  if (flat.formErrors.length) parts.push(...flat.formErrors);
+  return parts.length ? parts.join(" · ") : err.message;
+}
+
 export function getServerEnv(): ServerEnv {
   const parsed = serverSchema.safeParse(process.env);
   if (!parsed.success) {
-    throw new Error(
-      `Missing or invalid environment variables: ${parsed.error.flatten().fieldErrors}`,
-    );
+    throw new Error(`Missing or invalid environment variables: ${formatEnvParseError(parsed.error)}`);
   }
   return parsed.data;
 }
